@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+int calc(char *eq)
+{
+int operator;
+int a = 0, b = 0;
+int flag = 0;
+int n = strlen(eq);
+for (int i = 0; i < n; i++)
+{
+if (eq[i] == '-' || eq[i] == '+' || eq[i] == '*' || eq[i] == '/')
+{
+flag ^= 1;
+operator= eq[i];
+}
+else if (!flag)
+a = a * 10 + (eq[i] - '0');
+else
+b = b * 10 + (eq[i] - '0');
+}
+switch (operator)
+{
+case '+':
+return a + b;
+case '-':
+return a - b;
+case '*':
+return a * b;
+case '/':
+return a / b;
+default:
+return 0;
+}
+return 0;
+}
+int main()
+{
+int fd1[2], fd2[2];
+// We are going to make two pipe because we want to establish
+// two way communication as pipe is unidirectional data channel
+int retval1, retval2;
+char equation[20];
+retval1 = pipe(fd1);
+retval2 = pipe(fd2);
+if (retval1 == -1)
+{
+fprintf(stderr, "Pipe not successfully created");
+}
+if (retval2 == -1)
+{
+fprintf(stderr, "Pipe not successfully created");
+}
+scanf("%s", equation);
+pid_t p = fork();
+if (p < 0)
+{
+fprintf(stderr, "Child process not created");
+}
+else if (p > 0)
+{
+char ans[20];
+close(fd1[0]); // close the reading end Pipe1 as it is unused end
+write(fd1[1], equation, strlen(equation) + 1);
+// wait for Child process to get the result
+wait(NULL);
+close(fd2[1]); // We are actually closing the writing end of Pipe2 as it is unused end
+// Because once Child has return the result parent has to read it only
+read(fd2[0], ans, 20);
+printf("Answer of equation %s = %s ", equation, ans);
+close(fd2[0]);
+}
+else
+{
+// Child Process
+char buffer[20], Answer[20]; // char array Answer to store answer and char buffer to store
+// equation from reading end of Pipe1
+close(fd1[1]); // We are closing the writing end of the Pipe2 because it is unused and
+read(fd1[0], buffer, 20); // Child Process is reading the Equation passed from Parent
+Process to Child process through Pipe1
+sprintf(Answer, "%d", calc(buffer));
+// close the both reading end as it is no longer of any use
+close(fd1[0]);
+close(fd2[0]);
+// Write the Answer to the writing end of the Pipe2
+write(fd2[1], Answer, strlen(Answer));
+close(fd2[1]);
+}
+}
