@@ -1,0 +1,16 @@
+#include<stdio.h>
+int main()
+{
+    FILE *target;
+    fp=fopen("/proc/cpuinfo","r");
+    char info[500];
+    while(fgets(info,sizeof(info),target))
+    {
+          printf("%s\n",info);
+    }
+    fclose(target);
+       fp=fopen("/proc/meminfo","r");
+     while(fgets(info,sizeof(info),target)) printf("%s\n",info);
+    fclose(target); 
+    return 0;
+}
